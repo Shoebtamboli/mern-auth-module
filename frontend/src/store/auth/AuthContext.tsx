@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { authService } from '../../services/api';
+import { authApi } from '../../services/api';
 
 interface User {
   id: string;
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const loadUser = async () => {
     try {
       setLoading(true);
-      const userData = await authService.getCurrentUser();
+      const userData = await authApi.getCurrentUser();
       setUser(userData.user);
       setIsAuthenticated(true);
     } catch (err: any) {
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(true);
       setError(null);
       
-      const response = await authService.login({ email, password });
+      const response = await authApi.login({ email, password });
       const { token, user } = response;
       
       // Store token in the appropriate storage based on "Remember Me" preference
@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(true);
       setError(null);
       
-      const response = await authService.register({ 
+      const response = await authApi.register({ 
         name, 
         email, 
         password, 
