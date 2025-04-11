@@ -39,11 +39,42 @@ exports.registerUser = async (userData) => {
 };
 
 /**
+ * Authenticate user with email and password
+ * @param {Object} credentials - User login credentials
+ * @returns {Object} - User object and JWT token
+ */
+exports.loginUser = async (credentials) => {
+  const { email, password } = credentials;
+
+  // Find user by email and explicitly select the password field (which is normally excluded)
+  const user = await User.findOne({ email }).select('+password');
+  
+  // Check if user exists
+  if (!user) {
+    throw new AppError('Invalid email or password', 401);
+  }
+
+  // Check if password matches
+  const isPasswordMatch = await user.matchPassword(password);
+  if (!isPasswordMatch) {
+    throw new AppError('Invalid email or password', 401);
+  }
+
+  // Generate JWT token
+  const token = generateToken(user);
+
+  return {
+    user: sanitizeUser(user),
+    token,
+  };
+};
+
+/**
  * Sanitize user data for response (remove sensitive fields)
  * @param {Object} user - User document from MongoDB
  * @returns {Object} - Sanitized user object
  */
-exports.sanitizeUser = (user) => {
+const sanitizeUser = (user) => {
   return {
     id: user._id,
     name: user.name,
@@ -53,3 +84,6 @@ exports.sanitizeUser = (user) => {
     emailVerified: user.emailVerified,
   };
 };
+
+// Export the sanitized user function
+exports.sanitizeUser = sanitizeUser;

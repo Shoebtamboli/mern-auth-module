@@ -28,6 +28,33 @@ exports.register = async (req, res, next) => {
 };
 
 /**
+ * @desc    Login user and return JWT token
+ * @route   POST /api/auth/login
+ * @access  Public
+ */
+exports.login = async (req, res, next) => {
+  try {
+    // Extract login credentials from request body
+    const { email, password } = req.body;
+    
+    // Call service to handle login logic
+    const { user, token } = await authService.loginUser({ email, password });
+    
+    // Return successful response with user data and token
+    res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user,
+        token,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * @desc    Get current authenticated user
  * @route   GET /api/auth/me
  * @access  Private
