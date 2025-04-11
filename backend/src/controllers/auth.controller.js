@@ -116,3 +116,26 @@ exports.resetPassword = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * @desc    Change user's password
+ * @route   POST /api/auth/change-password
+ * @access  Private
+ */
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+    
+    // Call service to handle change password logic
+    const result = await authService.changePassword(userId, currentPassword, newPassword);
+    
+    // Return successful response
+    res.status(200).json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -187,3 +187,36 @@ exports.resetPassword = async (resetToken, newPassword) => {
 
   return { success: true };
 };
+
+/**
+ * Change user's password
+ * @param {String} userId - User ID
+ * @param {String} currentPassword - Current password
+ * @param {String} newPassword - New password
+ * @returns {Object} - Success message
+ */
+exports.changePassword = async (userId, currentPassword, newPassword) => {
+  // Find user by ID and include password field
+  const user = await User.findById(userId).select('+password');
+  
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  // Verify current password
+  const isPasswordMatch = await user.matchPassword(currentPassword);
+  if (!isPasswordMatch) {
+    throw new AppError('Current password is incorrect', 401);
+  }
+
+  // Set new password (will be hashed via pre-save hook)
+  user.password = newPassword;
+  
+  // Save updated user
+  await user.save();
+
+  return { 
+    success: true,
+    message: 'Password updated successfully' 
+  };
+};

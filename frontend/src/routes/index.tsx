@@ -3,6 +3,7 @@ import RegisterPage from '../pages/RegisterPage';
 import LoginPage from '../pages/LoginPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
+import ChangePasswordPage from '../pages/ChangePasswordPage';
 
 // Placeholder components for routes we haven't implemented yet
 const DashboardPage = () => <div>Dashboard Page (Coming Soon)</div>;
@@ -37,6 +38,14 @@ const router = createBrowserRouter([
   {
     path: '/reset-password/:token',
     element: <ResetPasswordPage />,
+  },
+  {
+    path: '/change-password',
+    element: (
+      <ProtectedRoute>
+        <ChangePasswordPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/dashboard',

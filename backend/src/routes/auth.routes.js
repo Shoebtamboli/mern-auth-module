@@ -5,7 +5,8 @@ const {
   registerValidation, 
   loginValidation, 
   forgotPasswordValidation,
-  resetPasswordValidation
+  resetPasswordValidation,
+  changePasswordValidation
 } = require('../validators/auth.validator');
 const validate = require('../middlewares/validation.middleware');
 const { protect } = require('../middlewares/auth.middleware');
@@ -23,5 +24,7 @@ router.post('/reset-password/:resetToken', resetPasswordValidation, validate, au
 // Protected routes
 // GET /api/auth/me - Get current authenticated user
 router.get('/me', protect, authController.getCurrentUser);
+// POST /api/auth/change-password - Change user password
+router.post('/change-password', protect, changePasswordValidation, validate, authController.changePassword);
 
 module.exports = router;
