@@ -30,7 +30,7 @@ const RegisterPage = () => {
           variant="h4"
           sx={{ mb: 4, fontWeight: 'bold' }}
         >
-          Welcome to MERN Auth
+          Create an Account
         </Typography>
         
         <RegisterForm />

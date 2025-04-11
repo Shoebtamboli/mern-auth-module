@@ -30,12 +30,16 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const { login, loading, error, clearErrors } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<LoginFormData>({
     resolver: yupResolver(loginSchema),
     mode: 'onBlur',
+    defaultValues: {
+      rememberMe: false
+    }
   });
+  
+  const rememberMe = watch('rememberMe');
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -52,7 +56,7 @@ const LoginForm = () => {
   };
 
   const handleRememberMeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRememberMe(event.target.checked);
+    setValue('rememberMe', event.target.checked);
   };
 
   return (
@@ -115,7 +119,7 @@ const LoginForm = () => {
                 checked={rememberMe}
                 onChange={handleRememberMeChange}
                 color="primary"
-                {...register('rememberMe')}
+                inputProps={{ 'aria-label': 'remember-me-checkbox' }}
               />
             }
             label="Remember me"
@@ -124,6 +128,8 @@ const LoginForm = () => {
             Forgot password?
           </Link>
         </Box>
+        
+        <input type="hidden" {...register('rememberMe')} />
         
         <Button
           type="submit"
