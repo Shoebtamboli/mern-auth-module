@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Box, Typography } from '@mui/material';
+import { Container, Box } from '@mui/material';
 import LoginForm from '../features/auth/components/LoginForm';
 import { useAuth } from '../hooks/useAuth';
 
@@ -25,14 +25,6 @@ const LoginPage = () => {
           alignItems: 'center',
         }}
       >
-        <Typography
-          component="h1"
-          variant="h4"
-          sx={{ mb: 4, fontWeight: 'bold' }}
-        >
-          Welcome Back
-        </Typography>
-        
         <LoginForm />
       </Box>
     </Container>

@@ -23,7 +23,7 @@ import { useAuth } from '../../../hooks/useAuth';
 interface LoginFormData {
   email: string;
   password: string;
-  rememberMe?: boolean;
+  rememberMe: boolean;
 }
 
 const LoginForm = () => {
@@ -32,7 +32,7 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<LoginFormData>({
-    resolver: yupResolver(loginSchema),
+    resolver: yupResolver(loginSchema) as any,
     mode: 'onBlur',
     defaultValues: {
       rememberMe: false
@@ -43,7 +43,7 @@ const LoginForm = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data.email, data.password, data.rememberMe || false);
+      await login(data.email, data.password, data.rememberMe);
       // Redirect to dashboard on successful login
       navigate('/dashboard');
     } catch (error) {
@@ -71,7 +71,7 @@ const LoginForm = () => {
         </Alert>
       )}
       
-      <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+      <Box component="form" onSubmit={handleSubmit(onSubmit as any)} noValidate>
         <TextField
           fullWidth
           id="email"

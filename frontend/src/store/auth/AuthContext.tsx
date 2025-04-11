@@ -1,152 +1,102 @@
-import { createContext, useReducer, ReactNode, useEffect } from 'react';
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { authService } from '../../services/api';
 
-// Define user type
-export interface User {
+interface User {
   id: string;
   name: string;
   email: string;
-  profileImage?: string;
-  role: string;
+  avatar?: string;
 }
 
-// Define authentication state interface
-export interface AuthState {
-  isAuthenticated: boolean;
+interface AuthContextType {
   user: User | null;
-  token: string | null;
   loading: boolean;
   error: string | null;
-}
-
-// Define the available actions
-type AuthAction =
-  | { type: 'LOGIN_START' }
-  | { type: 'LOGIN_SUCCESS'; payload: { user: User; token: string } }
-  | { type: 'LOGIN_FAIL'; payload: string }
-  | { type: 'REGISTER_START' }
-  | { type: 'REGISTER_SUCCESS'; payload: { user: User; token: string } }
-  | { type: 'REGISTER_FAIL'; payload: string }
-  | { type: 'LOGOUT' }
-  | { type: 'CLEAR_ERRORS' };
-
-// Define the context interface
-interface AuthContextInterface extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
+  isAuthenticated: boolean;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   clearErrors: () => void;
 }
 
-// Create the context
-export const AuthContext = createContext<AuthContextInterface>({
-  isAuthenticated: false,
+export const AuthContext = createContext<AuthContextType>({
   user: null,
-  token: null,
   loading: false,
   error: null,
+  isAuthenticated: false,
   login: async () => {},
   register: async () => {},
   logout: () => {},
   clearErrors: () => {},
 });
 
-// Create the reducer function
-const authReducer = (state: AuthState, action: AuthAction): AuthState => {
-  switch (action.type) {
-    case 'LOGIN_START':
-    case 'REGISTER_START':
-      return {
-        ...state,
-        loading: true,
-        error: null,
-      };
-    case 'LOGIN_SUCCESS':
-    case 'REGISTER_SUCCESS':
-      return {
-        ...state,
-        isAuthenticated: true,
-        user: action.payload.user,
-        token: action.payload.token,
-        loading: false,
-        error: null,
-      };
-    case 'LOGIN_FAIL':
-    case 'REGISTER_FAIL':
-      return {
-        ...state,
-        loading: false,
-        error: action.payload,
-      };
-    case 'LOGOUT':
-      return {
-        ...state,
-        isAuthenticated: false,
-        user: null,
-        token: null,
-      };
-    case 'CLEAR_ERRORS':
-      return {
-        ...state,
-        error: null,
-      };
-    default:
-      return state;
-  }
-};
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
-// Create the provider component
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const initialState: AuthState = {
-    isAuthenticated: false,
-    user: null,
-    token: null,
-    loading: false,
-    error: null,
-  };
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const [state, dispatch] = useReducer(authReducer, initialState);
-
-  // Check for token in localStorage on initial load
+  // Check if user is already logged in
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    
-    if (token && user) {
-      dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: { user: JSON.parse(user), token },
-      });
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (token) {
+      loadUser();
     }
   }, []);
 
-  // Login function
-  const login = async (email: string, password: string) => {
-    dispatch({ type: 'LOGIN_START' });
+  const loadUser = async () => {
     try {
-      const response = await authService.login({ email, password });
-      const { user, token } = response.data;
-      
-      // Save to localStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: { user, token },
-      });
-    } catch (error: any) {
-      dispatch({
-        type: 'LOGIN_FAIL',
-        payload: error.response?.data?.error?.message || 'Failed to login',
-      });
+      setLoading(true);
+      const userData = await authService.getCurrentUser();
+      setUser(userData.user);
+      setIsAuthenticated(true);
+    } catch (err: any) {
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
+      setError(err.response?.data?.message || 'Failed to load user');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Register function
-  const register = async (name: string, email: string, password: string) => {
-    dispatch({ type: 'REGISTER_START' });
+  const login = async (email: string, password: string, rememberMe = false) => {
     try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await authService.login({ email, password });
+      const { token, user } = response;
+      
+      // Store token in the appropriate storage based on "Remember Me" preference
+      if (rememberMe) {
+        localStorage.setItem('token', token);
+        sessionStorage.removeItem('token'); // Clear sessionStorage token if exists
+      } else {
+        sessionStorage.setItem('token', token);
+        localStorage.removeItem('token'); // Clear localStorage token if exists
+      }
+      
+      setUser(user);
+      setIsAuthenticated(true);
+      
+      return response;
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to login');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async (name: string, email: string, password: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
       const response = await authService.register({ 
         name, 
         email, 
@@ -154,40 +104,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         confirmPassword: password 
       });
       
-      const { user, token } = response.data;
+      const { token, user } = response;
       
-      // Save to localStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Store token in session storage by default for new registrations
+      sessionStorage.setItem('token', token);
       
-      dispatch({
-        type: 'REGISTER_SUCCESS',
-        payload: { user, token },
-      });
-    } catch (error: any) {
-      dispatch({
-        type: 'REGISTER_FAIL',
-        payload: error.response?.data?.error?.message || 'Failed to register',
-      });
+      setUser(user);
+      setIsAuthenticated(true);
+      
+      return response;
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Registration failed');
+      throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Logout function
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    dispatch({ type: 'LOGOUT' });
+    sessionStorage.removeItem('token');
+    setUser(null);
+    setIsAuthenticated(false);
   };
 
-  // Clear errors function
   const clearErrors = () => {
-    dispatch({ type: 'CLEAR_ERRORS' });
+    setError(null);
   };
 
   return (
     <AuthContext.Provider
       value={{
-        ...state,
+        user,
+        loading,
+        error,
+        isAuthenticated,
         login,
         register,
         logout,
