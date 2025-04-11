@@ -13,7 +13,9 @@ const api = axios.create({
 // Add request interceptor to include auth token in requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // Check both localStorage and sessionStorage for token
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -39,6 +41,21 @@ export const authService = {
   // Get current user
   getCurrentUser: async () => {
     const response = await api.get('/auth/me');
+    return response.data;
+  },
+  
+  // Forgot password
+  forgotPassword: async (email: string) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  // Reset password
+  resetPassword: async (token: string, password: string, confirmPassword: string) => {
+    const response = await api.post(`/auth/reset-password/${token}`, { 
+      password, 
+      confirmPassword 
+    });
     return response.data;
   }
 };
