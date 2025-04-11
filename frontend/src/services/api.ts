@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -14,7 +14,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Check both localStorage and sessionStorage for token
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
@@ -25,7 +25,7 @@ api.interceptors.request.use(
 );
 
 // Auth service
-export const authService = {
+export const authApi = {
   // Register a new user
   register: async (userData: { name: string; email: string; password: string; confirmPassword: string }) => {
     const response = await api.post('/auth/register', userData);
@@ -51,11 +51,8 @@ export const authService = {
   },
 
   // Reset password
-  resetPassword: async (token: string, password: string, confirmPassword: string) => {
-    const response = await api.post(`/auth/reset-password/${token}`, { 
-      password, 
-      confirmPassword 
-    });
+  resetPassword: async (token: string, passwords: { password: string; confirmPassword: string }) => {
+    const response = await api.post(`/auth/reset-password/${token}`, passwords);
     return response.data;
   }
 };

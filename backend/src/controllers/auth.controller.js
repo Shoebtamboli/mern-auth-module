@@ -71,3 +71,48 @@ exports.getCurrentUser = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * @desc    Forgot password - request password reset email
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
+ */
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    
+    // Call service to handle forgot password logic
+    const result = await authService.forgotPassword(email, req.protocol, req.get('host'));
+    
+    // Return successful response
+    res.status(200).json({
+      success: true,
+      message: 'Password reset email sent',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Reset password using token
+ * @route   POST /api/auth/reset-password/:resetToken
+ * @access  Public
+ */
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    const { resetToken } = req.params;
+    
+    // Call service to handle reset password logic
+    const result = await authService.resetPassword(resetToken, password);
+    
+    // Return successful response
+    res.status(200).json({
+      success: true,
+      message: 'Password has been reset successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
